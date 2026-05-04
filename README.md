@@ -1,133 +1,114 @@
-# Infoblox Value Analysis Tool — Deployment Guide
-
-A single-file HTML app (`index.html`) — no build step, no backend, no dependencies to install.
-
----
-
-## Option 1: Netlify (Recommended — Free, Fastest)
-
-### Drag & Drop (No account needed to test)
-1. Go to **https://app.netlify.com/drop**
-2. Drag and drop the **entire `infoblox-deploy` folder** onto the page
-3. Done — you get a live URL like `https://magical-name-123.netlify.app`
-
-### Via GitHub (Recommended for ongoing updates)
-1. Push this folder to a GitHub repo
-2. Go to **https://app.netlify.com** → "Add new site" → "Import from Git"
-3. Select your repo
-4. Build settings:
-   - **Build command:** *(leave blank)*
-   - **Publish directory:** `.`
-5. Click **Deploy site**
-6. Set a custom domain in Site Settings → Domain Management
-
-### Via Netlify CLI
-```bash
-npm install -g netlify-cli
-cd infoblox-deploy
-netlify deploy --prod --dir .
-```
-
----
-
-## Option 2: Vercel (Free, Excellent Performance)
-
-### Via Vercel CLI
-```bash
-npm install -g vercel
-cd infoblox-deploy
-vercel --prod
-```
-
-### Via GitHub
-1. Push to GitHub
-2. Go to **https://vercel.com/new**
-3. Import your repository
-4. Framework preset: **Other**
-5. Root directory: *(leave as is)*
-6. Click **Deploy**
-
----
-
-## Option 3: GitHub Pages (Free, Great for Internal Sharing)
-
-1. Create a new GitHub repository (public or private with Pages enabled)
-2. Push the files:
-```bash
-git init
-git add .
-git commit -m "Infoblox value tool"
-git remote add origin https://github.com/YOUR_USERNAME/infoblox-value-tool.git
-git push -u origin main
-```
-3. Go to repo **Settings → Pages**
-4. Source: **Deploy from branch** → `main` → `/ (root)`
-5. Your URL: `https://YOUR_USERNAME.github.io/infoblox-value-tool`
-
----
-
-## Option 4: Azure Static Web Apps
-
-1. Push to GitHub
-2. In Azure Portal → Create resource → **Static Web App**
-3. Connect to your GitHub repo
-4. Build details:
-   - App location: `/`
-   - Output location: *(leave blank)*
-5. Deploy — Azure creates a GitHub Action automatically
-
----
-
-## Option 5: AWS S3 + CloudFront
-
-```bash
-# Install AWS CLI first: https://aws.amazon.com/cli/
-aws s3 mb s3://infoblox-value-tool
-aws s3 website s3://infoblox-value-tool --index-document index.html
-aws s3 cp index.html s3://infoblox-value-tool/ --acl public-read
-```
-Then create a CloudFront distribution pointing to the S3 bucket for HTTPS + CDN.
-
----
-
-## Option 6: Simple Python/Node Local Server (For Testing)
-
-```bash
-# Python
-python -m http.server 8080
-# Then open http://localhost:8080
-
-# Node.js
-npx serve .
-# Then open http://localhost:3000
-```
-
----
-
-## Sharing Internally (No Deployment Needed)
-
-The tool is a **single HTML file** — you can:
-- Email `index.html` directly — recipients open it in any browser
-- Share via Teams / Slack / Google Drive
-- Host on your company intranet (just drop on any web server)
-
----
+# Showpad Value Analysis Tool — Netlify Deployment
 
 ## File Structure
 
 ```
-infoblox-deploy/
-├── index.html       ← The entire app (self-contained)
-├── netlify.toml     ← Netlify config
-├── vercel.json      ← Vercel config
-└── README.md        ← This file
+showpad-netlify/
+├── index.html                  ← The full app
+├── netlify.toml                ← Netlify config (routes /api/ask to function)
+├── .gitignore
+├── README.md
+└── netlify/
+    └── functions/
+        └── ask.js              ← Serverless AI proxy (keeps API key secret)
+```
+
+---
+
+## How it works
+
+```
+Browser  ──POST /api/ask──▶  netlify.toml redirect  ──▶  ask.js (Lambda)  ──▶  Anthropic API
+                                                          (API key secure in env vars)
+```
+
+No Node server needed — Netlify Functions handle the AI proxy serverlessly.
+
+---
+
+## Step 1 — Get your Anthropic API Key
+
+1. Go to **https://console.anthropic.com**
+2. Sign in (or create a free account)
+3. Click **"API Keys"** → **"Create Key"**
+4. Name it `showpad-value-tool`, copy the key (`sk-ant-...`)
+
+---
+
+## Step 2 — Deploy on Netlify
+
+### Option A: Drag & Drop (fastest — 2 minutes, no account needed to test)
+
+1. Go to **https://app.netlify.com/drop**
+2. Drag the entire **`showpad-netlify`** folder onto the page
+3. Done — you get a live URL instantly
+
+> ⚠️ Drag & Drop doesn't support environment variables. AI Insights won't work until you connect via GitHub (Option B) or add the key manually after deploying.
+
+---
+
+### Option B: GitHub → Netlify (Recommended — enables AI + auto-deploys)
+
+**Push to GitHub:**
+```bash
+cd showpad-netlify
+git init
+git add .
+git commit -m "Showpad Value Tool"
+# Create repo at https://github.com/new then:
+git remote add origin https://github.com/YOUR_USERNAME/showpad-value-tool.git
+git branch -M main
+git push -u origin main
+```
+
+**Connect to Netlify:**
+1. Go to **https://app.netlify.com** → **"Add new site"** → **"Import from Git"**
+2. Select your GitHub repo `showpad-value-tool`
+3. Build settings:
+   - **Build command:** *(leave blank)*
+   - **Publish directory:** `.`
+4. Click **"Deploy site"**
+
+---
+
+## Step 3 — Add the API Key (Enables AI Insights)
+
+1. In Netlify dashboard → your site → **"Site configuration"**
+2. Click **"Environment variables"** in the left sidebar
+3. Click **"Add a variable"**
+4. Key: `ANTHROPIC_API_KEY`
+5. Value: *(paste your key)*
+6. Click **"Save"**
+7. Go to **"Deploys"** → **"Trigger deploy"** → **"Deploy site"**
+
+---
+
+## Step 4 — Verify AI is Working
+
+Open your site and click **"Ask AI ↗"** with any question.
+
+Or test the function directly:
+```
+POST https://your-site.netlify.app/api/ask
+Content-Type: application/json
+{"system":"You are helpful.","question":"Hello"}
+```
+
+---
+
+## Updating the App
+
+Every push to GitHub auto-deploys:
+```bash
+git add .
+git commit -m "Updates"
+git push
 ```
 
 ---
 
 ## Notes
 
-- **No API key needed** to use the tool — the AI features call Anthropic's API directly
-- The PPTX download runs entirely in the browser — no server needed
-- Works in Chrome, Firefox, Safari, Edge (modern versions)
-- Mobile-responsive layout included
+- **Free Netlify tier** includes 125K function invocations/month — plenty for a value tool.
+- PPTX generation runs entirely in the browser — no server needed.
+- All cost calculations run client-side — no data sent to any server except AI queries.
