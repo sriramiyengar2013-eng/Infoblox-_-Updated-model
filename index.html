@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infoblox Value Analysis Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0B1F3A;--navy2:#0D2444;--navylt:#132A45;
+  --teal:#1ABC9C;--teal2:#14967C;--teal3:#0E7A65;
+  --white:#FFFFFF;--offwhite:#F4F7FB;--lgray:#EBF0F6;
+  --text:#1A2B40;--muted:#5A7080;--border:#D0DCE8;
+  --red:#E53935;--purple:#7C3AED;
+  --radius:10px;--font:'Inter',sans-serif
+}
+body{font-family:var(--font);background:var(--offwhite);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.app-hdr{background:var(--navy);border-bottom:3px solid var(--teal)}
+.hdr-in{max-width:1200px;margin:0 auto;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:13px}
+.logo-ic{width:42px;height:42px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--teal3));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--navy)}
+.logo-nm{font-size:18px;font-weight:800;color:var(--white)}
+.logo-sb{font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.hbadge{display:flex;align-items:center;gap:7px;background:rgba(26,188,156,.12);border:1px solid rgba(26,188,156,.3);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--teal);font-weight:600}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:24px 28px}
+
+/* SECTION */
+.sec{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:18px;overflow:hidden}
+.sec-hd{background:var(--navy2);padding:11px 20px;display:flex;align-items:center;gap:10px}
+.sec-hd h2{font-size:12px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.08em}
+.sec-num{width:22px;height:22px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--navy);flex-shrink:0}
+.sec-bd{padding:20px}
+
+/* PRODUCT GRID */
+.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.prod-card{border:2px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;background:var(--white);position:relative}
+.prod-card:hover{border-color:var(--teal);background:#F0FDFB}
+.prod-card.sel{border-color:var(--teal);background:#E6FBF5;box-shadow:0 0 0 3px rgba(26,188,156,.15)}
+.pchk{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:var(--teal);display:none;align-items:center;justify-content:center}
+.prod-card.sel .pchk{display:flex}
+.pchk svg{width:10px;height:10px;stroke:white;stroke-width:2.5;fill:none}
+.p-ico{font-size:20px;margin-bottom:5px}
+.p-nm{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.p-ds{font-size:11px;color:var(--muted);line-height:1.4}
+.p-tag{display:inline-block;margin-top:5px;padding:2px 7px;border-radius:20px;font-size:9.5px;font-weight:600;background:rgba(26,188,156,.1);color:var(--teal3)}
+
+/* COMPETITOR GRID */
+.comp-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.cc{border:2px solid var(--border);border-radius:8px;padding:10px 8px;cursor:pointer;transition:all .15s;text-align:center;background:var(--white);position:relative}
+.cc:hover{border-color:var(--purple);background:#FAF5FF}
+.cc.sel{border-color:var(--purple);background:#F5F0FF;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.cc .pchk{background:var(--purple)}
+.cc.sel .pchk{display:flex}
+.cc-nm{font-size:12px;font-weight:700;color:var(--text)}
+.cc-eff{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* INPUTS */
+.ig3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13.5px;font-family:var(--font);color:var(--text);background:var(--white);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--teal)}
+.field .hint{font-size:10.5px;color:var(--muted)}
+
+/* SLIDER */
+.sr{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.sr label{font-size:11.5px;font-weight:600;color:var(--muted);min-width:210px;text-transform:uppercase;letter-spacing:.04em}
+.sr input[type=range]{flex:1;height:4px;-webkit-appearance:none;border-radius:4px;outline:none;cursor:pointer;background:var(--border)}
+.sr input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--teal);cursor:pointer;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.sv{font-size:13px;font-weight:700;color:var(--teal3);min-width:74px;text-align:right}
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* RESULTS */
+.res-hd{background:var(--teal);padding:12px 20px;font-size:12.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.07em}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)}
+.kpi{padding:18px 16px;text-align:center;border-right:1px solid var(--border)}
+.kpi:last-child{border-right:none}
+.kpi-lbl{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.kv{font-size:30px;font-weight:800;line-height:1}
+.kv.red{color:var(--red)}.kv.green{color:var(--teal3)}.kv.purple{color:var(--purple)}
+.kd{font-size:12.5px;font-weight:600;margin-top:5px}
+.kd.good{color:var(--teal3)}.kd.bad{color:var(--red)}.kd.neu{color:var(--muted)}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse;font-size:12.5px}
+.dt th{background:var(--navy);color:var(--white);padding:9px 14px;text-align:center;font-weight:700;font-size:11.5px;letter-spacing:.03em}
+.dt th:first-child{text-align:left;background:var(--navylt)}
+.dt th.ibc{background:var(--teal3);color:white!important}
+.dt td{padding:9px 14px;border-bottom:1px solid var(--border);text-align:center}
+.dt td:first-child{text-align:left;font-weight:600;color:var(--text)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#F8FBFF}
+.dt td.ibc{background:rgba(26,188,156,.06);font-weight:700;color:var(--teal3)}
+.dt .trow td{font-weight:800;background:var(--navy2);color:var(--white)!important}
+.dt .trow .ibc{background:var(--teal3)!important;color:white!important}
+.dt .srow td{background:#F0FDF9}.dt .srow .ibc{background:#DCFAF3;color:var(--teal3)}
+
+/* CHARTS */
+.cw{position:relative;height:250px;width:100%}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:9px}
+
+/* AI */
+.ai-wrap{background:#F0FDF9;border:1.5px solid rgba(26,188,156,.22);border-radius:var(--radius);padding:14px}
+.ai-row{display:flex;gap:9px;margin-bottom:9px}
+.ai-row input{flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:var(--font);outline:none}
+.ai-row input:focus{border-color:var(--teal)}
+.ai-out{font-size:13px;line-height:1.75;color:var(--text);min-height:56px}
+.ai-dim{color:var(--muted);font-style:italic}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.chip{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11.5px;color:var(--muted);cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--teal);color:var(--teal3);background:#F0FDFB}
+
+/* BTN */
+.btnp{background:var(--teal);color:var(--navy);border:none;padding:10px 24px;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btnp:hover{background:var(--teal2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,188,156,.3)}
+.btnp:disabled{background:#bbb;cursor:not-allowed;transform:none;box-shadow:none}
+.btns{background:var(--white);color:var(--navy);border:2px solid var(--navy);padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btns:hover{background:var(--navy);color:var(--white)}
+.btn-row{display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+
+#dlStatus{font-size:12.5px;color:var(--muted);padding:5px 0}
+.ok{color:var(--teal3)!important;font-weight:600}
+.er{color:var(--red)!important}
+
+@media(max-width:800px){
+  .prod-grid{grid-template-columns:1fr 1fr}
+  .comp-grid{grid-template-columns:repeat(3,1fr)}
+  .ig3{grid-template-columns:1fr 1fr}
+  .kpi-row{grid-template-columns:1fr}
+  .kpi{border-right:none;border-bottom:1px solid var(--border)}
+  .g2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="app-hdr">
+  <div class="hdr-in">
+    <div class="logo">
+      <div class="logo-ic">DDI</div>
+      <div>
+        <div class="logo-nm">Infoblox Value Analysis</div>
+        <div class="logo-sb">Business Value Comparison Tool</div>
+      </div>
+    </div>
+    <div class="hbadge"><div class="bdot"></div>AI-Powered Engine</div>
+  </div>
+</header>
+
+<div class="main">
+
+<!-- 1. PRODUCT -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-num">1</div><h2>Select Infoblox Product</h2></div>
+  <div class="sec-bd">
+    <div class="prod-grid" id="prodGrid">
+
+      <div class="prod-card" data-id="ddi" data-ib-hrs="0.15" data-ib-inc="0.30" onclick="pickProd(this)">
+        <div class="pchk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <div class="p-ico">🔷</div>
+        <div class="p-nm">Infoblox DDI</div>
+        <div class="p-ds">Full DNS, DHCP &amp; IPAM lifecycle management on-premises</div>
+        <div class="p-tag">Most Popular</div>
+      </div>
+
+      <div class="prod-card" data-id="ipam" data-ib-hrs="0.20" data-ib-inc="0.40" onclick="pickProd(this)">
+        <div class="pchk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <div class="p-ico">📊</div>
+        <div class="p-nm">Infoblox IPAM</div>
+        <div class="p-ds">Standalone IP address management &amp; real-time visibility</div>
+        <div class="p-tag">Visibility Focus</div>
+      </div>
+
+      <div class="prod-card" data-id="bloxone" data-ib-hrs="0.12" data-ib-inc="0.25" onclick="pickProd(this)">
+        <div class="pchk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <div class="p-ico">☁️</div>
+        <div class="p-nm">BloxOne DDI</div>
+        <div class="p-ds">Cloud-first SaaS DDI for hybrid &amp; multi-cloud environments</div>
+        <div class="p-tag">Cloud-Native</div>
+      </div>
+
+      <div class="prod-card" data-id="custom" data-ib-hrs="0.18" data-ib-inc="0.35" onclick="pickProd(this)">
+        <div class="pchk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <div class="p-ico">⚙️</div>
+        <div class="p-nm">Custom</div>
+        <div class="p-ds">Flexible inputs to model any Infoblox deployment scenario</div>
+        <div class="p-tag">Configurable</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 2. COMPETITOR -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-num">2</div><h2>Select Competitor to Compare</h2></div>
+  <div class="sec-bd">
+    <div class="comp-grid" id="compGrid">
+      <div class="cc" data-nm="BlueCat"      data-eff="0.74" data-inc="0.72" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">BlueCat</div><div class="cc-eff">74% efficiency</div></div>
+      <div class="cc" data-nm="EfficientIP"  data-eff="0.70" data-inc="0.75" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">EfficientIP</div><div class="cc-eff">70% efficiency</div></div>
+      <div class="cc" data-nm="Cisco DDI"    data-eff="0.66" data-inc="0.80" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">Cisco DDI</div><div class="cc-eff">66% efficiency</div></div>
+      <div class="cc" data-nm="SolarWinds"   data-eff="0.62" data-inc="0.85" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">SolarWinds</div><div class="cc-eff">62% efficiency</div></div>
+      <div class="cc" data-nm="Men&amp;Mice" data-eff="0.70" data-inc="0.78" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">Men&amp;Mice</div><div class="cc-eff">70% efficiency</div></div>
+      <div class="cc" data-nm="BT Diamond IP" data-eff="0.64" data-inc="0.82" onclick="pickComp(this)"><div class="pchk"><svg viewBox="0 0 12 12" stroke="white" fill="none" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div><div class="cc-nm">BT Diamond IP</div><div class="cc-eff">64% efficiency</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. INPUTS -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-num">3</div><h2>Configure Your Environment</h2></div>
+  <div class="sec-bd">
+    <div class="ig3">
+      <div class="field">
+        <label>Organization Name</label>
+        <input type="text" id="orgName" value="Acme Corp" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label>Industry</label>
+        <select id="industry" onchange="recalc()">
+          <option>Financial Services</option><option>Healthcare</option>
+          <option>Technology</option><option>Manufacturing</option>
+          <option>Government</option><option>Retail</option>
+          <option>Energy &amp; Utilities</option><option>Telecommunications</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Infoblox Annual Cost ($)</label>
+        <input type="number" id="ibLic" value="120000" oninput="recalc()">
+        <span class="hint">Annual license / subscription</span>
+      </div>
+    </div>
+
+    <div class="sr"><label>Managed IP Addresses</label><input type="range" min="500" max="200000" value="4800" step="100" id="sIPs" oninput="usv(this,'vIPs','n');recalc()"><span class="sv" id="vIPs">4,800</span></div>
+    <div class="sr"><label>IT Hourly Rate ($/hr)</label><input type="range" min="40" max="200" value="90" step="5" id="sRate" oninput="usv(this,'vRate','$');recalc()"><span class="sv" id="vRate">$90</span></div>
+    <div class="sr"><label>Manual Admin Hrs / IP / Year</label><input type="range" min="0.1" max="3" value="0.5" step="0.05" id="sManHrs" oninput="usv(this,'vManHrs','f');recalc()"><span class="sv" id="vManHrs">0.50</span></div>
+    <div class="sr"><label>DNS/DHCP Incidents / Year</label><input type="range" min="0" max="5000" value="120" step="10" id="sInc" oninput="usv(this,'vInc','n');recalc()"><span class="sv" id="vInc">120</span></div>
+    <div class="sr"><label>Avg. Cost per Incident ($)</label><input type="range" min="0" max="50000" value="2500" step="250" id="sIncCost" oninput="usv(this,'vIncCost','$');recalc()"><span class="sv" id="vIncCost">$2,500</span></div>
+
+    <div id="customBlock" style="display:none">
+      <hr>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px">Custom Product Efficiency</p>
+      <div class="sr"><label>Infoblox Admin Hrs / IP / Year</label><input type="range" min="0.05" max="0.5" value="0.18" step="0.01" id="sIbHrs" oninput="usv(this,'vIbHrs','f');recalc()"><span class="sv" id="vIbHrs">0.18</span></div>
+      <div class="sr"><label>Infoblox Incident Reduction</label><input type="range" min="10" max="90" value="65" step="5" id="sIbRed" oninput="usv(this,'vIbRed','%');recalc()"><span class="sv" id="vIbRed">65%</span></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btnp" onclick="recalc();scrollDown()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Calculate Value
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 4. RESULTS -->
+<div id="resultsDiv" class="sec">
+  <div class="res-hd">Comparison Output — Based on User Selection</div>
+  <p style="padding:9px 20px 4px;font-size:12px;font-style:italic;color:var(--muted)">Results reflect calculations from the Infoblox Value Model based on your inputs.</p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-lbl">Without Infoblox</div>
+      <div class="kv red" id="kWithout">—</div>
+      <div class="kd neu">Manual / legacy operations</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--teal)">
+      <div class="kpi-lbl">With <span id="kProdNm">Infoblox DDI</span></div>
+      <div class="kv green" id="kWith">—</div>
+      <div class="kd good" id="kSavPct">—</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--purple)">
+      <div class="kpi-lbl"><span id="kCompNm">BlueCat</span></div>
+      <div class="kv purple" id="kComp">—</div>
+      <div class="kd neu" id="kCompDelta">—</div>
+    </div>
+  </div>
+
+  <div style="padding:18px 20px">
+    <div class="g2" style="margin-bottom:18px">
+      <div>
+        <p class="chart-lbl">Annual Cost Comparison</p>
+        <div class="cw"><canvas id="barChart" role="img" aria-label="Annual cost comparison bar chart">Loading...</canvas></div>
+      </div>
+      <div>
+        <p class="chart-lbl">3-Year Cumulative Savings with Infoblox</p>
+        <div class="cw"><canvas id="lineChart" role="img" aria-label="3-year cumulative savings line chart">Loading...</canvas></div>
+      </div>
+    </div>
+
+    <p class="chart-lbl" style="margin-bottom:9px">Detailed Cost Breakdown</p>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Without Infoblox</th>
+          <th class="ibc" id="thIb">With Infoblox DDI</th>
+          <th id="thComp">BlueCat</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p style="font-size:11px;color:var(--muted);margin-top:7px;font-style:italic">* All values calculated from your inputs using the Infoblox Value Model.</p>
+  </div>
+</div>
+
+<!-- 5. AI -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-num">5</div><h2>AI-Powered Insights</h2></div>
+  <div class="sec-bd">
+    <div class="ai-wrap">
+      <div class="chips">
+        <span class="chip" onclick="ask('Summarize the key financial benefits of choosing Infoblox')">Key benefits</span>
+        <span class="chip" onclick="ask('Write a 3-sentence executive summary for the CIO justifying this investment')">CIO summary</span>
+        <span class="chip" onclick="ask('What are the top operational risks of staying without Infoblox?')">Without Infoblox risks</span>
+        <span class="chip" onclick="ask('Why is Infoblox better than the selected competitor for our environment?')">vs Competitor</span>
+        <span class="chip" onclick="ask('How quickly can we achieve payback on this Infoblox investment?')">Payback analysis</span>
+      </div>
+      <div class="ai-row">
+        <input type="text" id="aiQ" placeholder="Ask anything about your value analysis...">
+        <button class="btnp" onclick="runQ()" style="padding:8px 16px;font-size:13px">Ask AI ↗</button>
+      </div>
+      <div class="ai-out" id="aiOut"><span class="ai-dim">Calculate your values above, then ask the AI engine any question...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. EXPORT -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-num">6</div><h2>Export PowerPoint — 4-Slide Business Case</h2></div>
+  <div class="sec-bd">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Generates a 4-slide PPTX matching your uploaded template style: Title · Product Overview · Comparison Output · Model Assumptions.</p>
+    <div class="btn-row">
+      <button class="btnp" id="dlBtn" onclick="buildPPTX()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 8l3 3 3-3M2 14h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download PowerPoint
+      </button>
+      <button class="btns" onclick="recalc()">Refresh Calculations</button>
+    </div>
+    <div id="dlStatus"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+/* ── STATE ── */
+let P = null, C = null, D = {}, CH = {};
+
+/* ── SELECTORS ── */
+function pickProd(el){
+  document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  P = { id:el.dataset.id, name:el.querySelector('.p-nm').textContent.trim(),
+        ibHrs:parseFloat(el.dataset.ibHrs), ibInc:parseFloat(el.dataset.ibInc) };
+  document.getElementById('customBlock').style.display = el.dataset.id==='custom'?'block':'none';
+  recalc();
+}
+function pickComp(el){
+  document.querySelectorAll('.cc').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  C = { name:el.dataset.nm, eff:parseFloat(el.dataset.eff), inc:parseFloat(el.dataset.inc) };
+  recalc();
+}
+
+/* ── SLIDER HELPER ── */
+function usv(el, outId, type){
+  const v = parseFloat(el.value);
+  let txt = type==='$' ? '$'+Math.round(v).toLocaleString()
+          : type==='%' ? v+'%'
+          : type==='f' ? v.toFixed(2)
+          : Math.round(v).toLocaleString();
+  document.getElementById(outId).textContent = txt;
+  const pct = (v-el.min)/(el.max-el.min)*100;
+  el.style.background = `linear-gradient(90deg,#1ABC9C ${pct}%,#D0DCE8 ${pct}%)`;
+}
+
+/* ── CALC ── */
+function recalc(){
+  if(!P||!C) return;
+  const ips    = parseFloat(document.getElementById('sIPs').value)||4800;
+  const rate   = parseFloat(document.getElementById('sRate').value)||90;
+  const manH   = parseFloat(document.getElementById('sManHrs').value)||0.5;
+  const inc    = parseFloat(document.getElementById('sInc').value)||120;
+  const icost  = parseFloat(document.getElementById('sIncCost').value)||2500;
+  const ibLic  = parseFloat(document.getElementById('ibLic').value)||120000;
+
+  let ibHrs = P.ibHrs, ibIncF = P.ibInc;
+  if(P.id==='custom'){
+    ibHrs  = parseFloat(document.getElementById('sIbHrs').value)||0.18;
+    ibIncF = 1 - (parseFloat(document.getElementById('sIbRed').value)||65)/100;
+  }
+
+  // Without Infoblox
+  const labW = ips*manH*rate;
+  const incW = inc*icost;
+  const totW = labW+incW;
+
+  // With Infoblox
+  const labI = ips*ibHrs*rate;
+  const incI = inc*icost*ibIncF;
+  const totI = labI+incI+ibLic;
+  const savVsNo = totW-totI;
+  const savPct  = totW>0?Math.round(savVsNo/totW*100):0;
+
+  // Competitor (uses their efficiency ratio relative to manual)
+  const compHrs = manH*(1-C.eff);
+  const labC    = ips*compHrs*rate;
+  const incC    = inc*icost*C.inc;
+  const totC    = labC+incC;
+  const savIvsC = totC-totI;    // positive = Infoblox cheaper than competitor
+  const savIvsC_pct = totC>0?Math.round(savIvsC/totC*100):0;
+
+  D = {
+    org:     document.getElementById('orgName').value||'Acme Corp',
+    industry:document.getElementById('industry').value,
+    prod:P.name, comp:C.name, compEff:Math.round(C.eff*100),
+    ips, rate, manH, inc, icost, ibLic, ibHrs, ibIncF,
+    labW,incW,totW, labI,incI,totI, savVsNo,savPct,
+    labC,incC,totC, savIvsC,savIvsC_pct,
+    date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'})
+  };
+
+  updateKPIs(); updateTable(); updateCharts();
+}
+
+function f(n){ return '$'+Math.round(n).toLocaleString(); }
+
+function updateKPIs(){
+  document.getElementById('kWithout').textContent = f(D.totW);
+  document.getElementById('kWith').textContent    = f(D.totI);
+  document.getElementById('kComp').textContent    = f(D.totC);
+  document.getElementById('kProdNm').textContent  = D.prod;
+  document.getElementById('kCompNm').textContent  = D.comp;
+  document.getElementById('thIb').textContent     = 'With '+D.prod;
+  document.getElementById('thComp').textContent   = D.comp;
+  const sp = document.getElementById('kSavPct');
+  sp.textContent = (D.savPct>=0?'↓ ':'↑ ')+Math.abs(D.savPct)+'% savings vs. no Infoblox';
+  sp.className = 'kd '+(D.savPct>=0?'good':'bad');
+  const cd = document.getElementById('kCompDelta');
+  cd.textContent = D.savIvsC>0
+    ? '↓ '+D.savIvsC_pct+'% cheaper than '+D.comp
+    : '↑ '+Math.abs(D.savIvsC_pct)+'% more expensive than '+D.comp;
+  cd.className = 'kd '+(D.savIvsC>0?'good':'bad');
+}
+
+function updateTable(){
+  const rows = [
+    ['DNS/IPAM Labor Cost', D.labW, D.labI, D.labC],
+    ['Incident / Downtime Cost', D.incW, D.incI, D.incC],
+    ['License / Tool Cost', 0, D.ibLic, 0],
+  ];
+  const totSavComp = D.totW-D.totC;
+  const totSavCompPct = D.totW>0?Math.round(totSavComp/D.totW*100):0;
+  let html='';
+  rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td>${f(r[1])}</td><td class="ibc">${f(r[2])}</td><td>${f(r[3])}</td></tr>`);
+  html+=`<tr class="trow"><td>Total Annual Cost</td><td>${f(D.totW)}</td><td class="ibc">${f(D.totI)}</td><td>${f(D.totC)}</td></tr>`;
+  html+=`<tr class="srow"><td>Savings with Infoblox</td><td>—</td><td class="ibc">${f(D.savVsNo)} (${D.savPct}%)</td><td>${f(totSavComp)} (${totSavCompPct}%)</td></tr>`;
+  html+=`<tr class="srow"><td>Savings vs ${D.comp}</td><td>—</td><td class="ibc">${D.savIvsC>0?f(D.savIvsC)+' ('+D.savIvsC_pct+'%)':'-'+f(Math.abs(D.savIvsC))}</td><td>—</td></tr>`;
+  document.getElementById('tbody').innerHTML = html;
+}
+
+function updateCharts(){
+  const labels=['Without Infoblox','With '+D.prod, D.comp];
+  const vals=[D.totW,D.totI,D.totC];
+  if(CH.bar)CH.bar.destroy();
+  CH.bar=new Chart(document.getElementById('barChart'),{
+    type:'bar', data:{labels,datasets:[{data:vals,backgroundColor:['rgba(229,57,53,.75)','rgba(26,188,156,.85)','rgba(124,58,237,.75)'],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>'$'+Math.round(v/1000)+'K',color:'#5A7080'},grid:{color:'rgba(0,0,0,0.05)'},beginAtZero:true},
+              x:{ticks:{color:'#5A7080'},grid:{display:false}}}}
+  });
+  const an=D.savVsNo;
+  if(CH.line)CH.line.destroy();
+  CH.line=new Chart(document.getElementById('lineChart'),{
+    type:'line',
+    data:{labels:['Now','Yr 1','Yr 2','Yr 3'],datasets:[{data:[0,an,an*2,an*3],borderColor:'#1ABC9C',backgroundColor:'rgba(26,188,156,.08)',fill:true,tension:.35,pointBackgroundColor:[0,an,an*2,an*3].map(v=>v>=0?'#1ABC9C':'#E53935'),pointRadius:6,pointBorderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>'$'+Math.round(v/1000)+'K',color:'#5A7080'},grid:{color:'rgba(0,0,0,0.05)'}},
+              x:{ticks:{color:'#5A7080'},grid:{display:false}}}}
+  });
+}
+
+function scrollDown(){
+  setTimeout(()=>document.getElementById('resultsDiv').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+/* ── AI ── */
+function ask(q){document.getElementById('aiQ').value=q;runQ();}
+async function runQ(){
+  const q=document.getElementById('aiQ').value.trim();
+  if(!q)return;
+  if(!D.totW){document.getElementById('aiOut').innerHTML='<span class="ai-dim">Please calculate values first.</span>';return;}
+  const out=document.getElementById('aiOut');
+  out.innerHTML='<span class="ai-dim">Analyzing...</span>';
+  const ctx=`You are an Infoblox business value consultant. Customer: ${D.org} (${D.industry}).
+Product: ${D.prod}. Competitor: ${D.comp} (${D.compEff}% efficiency vs manual).
+Costs: Without Infoblox: ${f(D.totW)}/yr | With ${D.prod}: ${f(D.totI)}/yr | ${D.comp}: ${f(D.totC)}/yr.
+Annual savings vs no Infoblox: ${f(D.savVsNo)} (${D.savPct}%). License: ${f(D.ibLic)}/yr.
+Environment: ${Math.round(D.ips).toLocaleString()} IPs, $${D.rate}/hr IT rate, ${Math.round(D.inc)} incidents/yr @ ${f(D.icost)}.
+Respond as a value consultant in 3-5 concise data-driven sentences.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,system:ctx,messages:[{role:'user',content:q}]})});
+    const d=await r.json();
+    out.textContent=d.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'No response.';
+  }catch(e){out.textContent='AI engine error. Please try again.';}
+}
+
+/* ── PPTX (4-slide template match) ── */
+async function buildPPTX(){
+  if(typeof PptxGenJS === 'undefined'){
+    alert('Presentation library is still loading. Please wait 2-3 seconds and try again.');
+    return;
+  }
+  if(!D.totW){alert('Please select a product and competitor, then calculate values first.');return;}
+  const btn=document.getElementById('dlBtn'),st=document.getElementById('dlStatus');
+  btn.disabled=true; st.className=''; st.textContent='Building presentation...';
+  try{
+    const pptx=new PptxGenJS();
+    pptx.layout='LAYOUT_16x9';
+    pptx.title=`${D.org} — Infoblox Value Analysis`;
+
+    const NAV='0B1F3A',NAV2='0D2444',NAVLT='132A45';
+    const TEA='1ABC9C',TEA2='14967C',TEA3='0E7A65';
+    const WHT='FFFFFF',LGR='F4F7FB',MGR='D0DCE8',DGR='5A7080';
+    const RED='E53935',PUR='7C3AED';
+
+    // ── SLIDE 1: TITLE (dark navy, circles, bold) ──
+    const s1=pptx.addSlide();
+    s1.background={color:NAV2};
+    // decorative arcs
+    s1.addShape(pptx.shapes.OVAL,{x:7.6,y:-1.3,w:3.4,h:3.4,fill:{color:TEA,transparency:72},line:{color:TEA,width:0}});
+    s1.addShape(pptx.shapes.OVAL,{x:7.9,y:-0.8,w:2.2,h:2.2,fill:{color:TEA2,transparency:55},line:{color:TEA2,width:0}});
+    s1.addShape(pptx.shapes.OVAL,{x:-1.5,y:3.9,w:3.0,h:3.0,fill:{color:TEA,transparency:78},line:{color:TEA,width:0}});
+    s1.addText('INFOBLOX VALUE ANALYSIS',{x:.55,y:1.5,w:8.5,h:1.3,color:WHT,fontSize:46,fontFace:'Calibri',bold:true});
+    s1.addShape(pptx.shapes.RECTANGLE,{x:.55,y:3.05,w:5.5,h:.07,fill:{color:TEA}});
+    s1.addText('Business Value Comparison: Infoblox vs. Manual vs. Competitors',{x:.55,y:3.25,w:8,h:.5,color:TEA,fontSize:15,fontFace:'Calibri',italic:true});
+    s1.addText([
+      {text:'Product: ',options:{bold:true,color:WHT}},{text:D.prod+'   ',options:{bold:true,color:TEA}},
+      {text:'Generated: ',options:{color:'8899BB'}},{text:D.date,options:{color:'8899BB'}}
+    ],{x:.55,y:3.95,w:8,h:.4,fontSize:11,fontFace:'Calibri'});
+    s1.addShape(pptx.shapes.RECTANGLE,{x:0,y:5.25,w:10,h:.375,fill:{color:NAV}});
+    s1.addText('© '+new Date().getFullYear()+'  |  Confidential',{x:.35,y:5.27,w:5,h:.33,color:'8899BB',fontSize:8,fontFace:'Calibri',valign:'middle'});
+    s1.addText('infoblox.com',{x:7.5,y:5.27,w:2.2,h:.33,color:TEA,fontSize:8,fontFace:'Calibri',align:'right',valign:'middle'});
+
+    // ── SLIDE 2: PRODUCT OVERVIEW (white BG, two panels) ──
+    const s2=pptx.addSlide();
+    s2.background={color:WHT};
+    s2.addShape(pptx.shapes.RECTANGLE,{x:0,y:0,w:10,h:.7,fill:{color:NAV}});
+    s2.addText('PRODUCT & SOLUTION OVERVIEW',{x:.35,y:0,w:9.3,h:.7,color:WHT,fontSize:18,fontFace:'Calibri',bold:true,valign:'middle'});
+    // left panel
+    s2.addShape(pptx.shapes.RECTANGLE,{x:.35,y:.95,w:4.35,h:3.5,fill:{color:LGR},line:{color:MGR,width:.5}});
+    s2.addShape(pptx.shapes.RECTANGLE,{x:.35,y:.95,w:.06,h:3.5,fill:{color:NAV2}});
+    s2.addText('What is '+D.prod+'?',{x:.55,y:1.08,w:4.0,h:.38,color:NAV2,fontSize:13,fontFace:'Calibri',bold:true});
+    const bpts=[
+      'DNS, DHCP & IPAM (DDI) — core network services keeping IP infrastructure running.',
+      'Automates IP address management, reduces manual errors, speeds network provisioning.',
+      'Intelligent DNS security with threat intelligence to block malicious activity.',
+      'Replaces fragmented spreadsheets with a single authoritative DDI platform.',
+      'Proven to cut DNS/IPAM labor by up to 85% and reduce network incidents at scale.',
+    ];
+    s2.addText(bpts.map((b,i)=>({text:b,options:{bullet:true,breakLine:i<bpts.length-1,color:'344A60',fontSize:10.5,fontFace:'Calibri'}})),{x:.55,y:1.55,w:4.0,h:2.75});
+    // right panel
+    s2.addShape(pptx.shapes.RECTANGLE,{x:5.05,y:.95,w:4.6,h:3.5,fill:{color:WHT},line:{color:MGR,width:.5}});
+    s2.addShape(pptx.shapes.RECTANGLE,{x:5.05,y:.95,w:.06,h:3.5,fill:{color:TEA}});
+    s2.addText('Product Editions & Key Features',{x:5.25,y:1.08,w:4.25,h:.38,color:NAV2,fontSize:13,fontFace:'Calibri',bold:true});
+    [['Infoblox DDI','On-prem DNS/DHCP/IPAM with full lifecycle management'],
+     ['Infoblox IPAM','Standalone IP address management & real-time visibility'],
+     ['BloxOne DDI','Cloud-first SaaS DDI for hybrid environments'],
+     ['Custom','Flexible inputs to model any deployment scenario']
+    ].forEach(([nm,ds],i)=>{
+      const ck=nm===D.prod||nm.includes(D.prod.split(' ')[1]);
+      s2.addText(nm+(ck?' ✓':''),{x:5.25,y:1.62+i*.73,w:4.25,h:.3,color:ck?TEA2:NAV2,fontSize:11,fontFace:'Calibri',bold:true});
+      s2.addText(ds,{x:5.25,y:1.92+i*.73,w:4.25,h:.28,color:DGR,fontSize:9.5,fontFace:'Calibri'});
+    });
+    s2.addText(`Competitor in scope: ${D.comp}  (${D.compEff}% efficiency vs manual)`,{x:.35,y:4.58,w:9.3,h:.3,color:TEA2,fontSize:11,fontFace:'Calibri',bold:true});
+    s2.addText('Source: Infoblox Value Model',{x:.35,y:5.02,w:9.3,h:.2,color:DGR,fontSize:9,fontFace:'Calibri',align:'right'});
+
+    // ── SLIDE 3: COMPARISON (teal header, 3-col KPI, table) ──
+    const s3=pptx.addSlide();
+    s3.background={color:WHT};
+    s3.addShape(pptx.shapes.RECTANGLE,{x:0,y:0,w:10,h:.7,fill:{color:TEA2}});
+    s3.addText('COMPARISON OUTPUT  —  Based on User Selection',{x:.35,y:0,w:9.3,h:.7,color:WHT,fontSize:17,fontFace:'Calibri',bold:true,valign:'middle'});
+    s3.addText('Results reflect calculations from the Infoblox Value Model based on your inputs.',{x:.35,y:.82,w:9.3,h:.28,color:DGR,fontSize:10,fontFace:'Calibri',italic:true});
+
+    // 3 KPI boxes
+    [
+      {lbl:'Without Infoblox',val:f(D.totW),delta:'Manual / legacy operations',bg:'FEF2F2',top:RED,vc:RED,dc:'8B0000'},
+      {lbl:'With '+D.prod,    val:f(D.totI),delta:'↓ '+D.savPct+'% savings vs. no Infoblox',bg:'F0FDF9',top:TEA2,vc:TEA2,dc:TEA3},
+      {lbl:D.comp,            val:f(D.totC),delta:(D.savIvsC>0?'↓ '+D.savIvsC_pct+'% cheaper than Infoblox':'↑ '+Math.abs(D.savIvsC_pct)+'% vs Infoblox'),bg:'FAF5FF',top:PUR,vc:PUR,dc:PUR},
+    ].forEach((k,i)=>{
+      const x=.35+i*3.2;
+      s3.addShape(pptx.shapes.RECTANGLE,{x,y:1.2,w:3.05,h:1.42,fill:{color:k.bg},line:{color:MGR,width:.5}});
+      s3.addShape(pptx.shapes.RECTANGLE,{x,y:1.2,w:3.05,h:.06,fill:{color:k.top}});
+      s3.addText(k.lbl,{x,y:1.32,w:3.05,h:.32,color:k.top,fontSize:12,fontFace:'Calibri',bold:true,align:'center'});
+      s3.addText(k.val,{x,y:1.64,w:3.05,h:.62,color:k.vc,fontSize:28,fontFace:'Calibri',bold:true,align:'center'});
+      s3.addText(k.delta,{x,y:2.25,w:3.05,h:.3,color:k.dc,fontSize:10,fontFace:'Calibri',bold:true,align:'center'});
+    });
+
+    // table
+    const totSavComp=D.totW-D.totC;
+    const totSavCompPct=D.totW>0?Math.round(totSavComp/D.totW*100):0;
+    const th=[
+      {text:'Category',     options:{fill:{color:NAV},color:WHT,bold:true,align:'left',fontSize:10.5,fontFace:'Calibri'}},
+      {text:'Without Infoblox',options:{fill:{color:NAVLT},color:WHT,bold:true,align:'center',fontSize:10.5,fontFace:'Calibri'}},
+      {text:'With '+D.prod,  options:{fill:{color:TEA2},color:WHT,bold:true,align:'center',fontSize:10.5,fontFace:'Calibri'}},
+      {text:D.comp,         options:{fill:{color:'4A1D96'},color:WHT,bold:true,align:'center',fontSize:10.5,fontFace:'Calibri'}},
+    ];
+    const cc=(v,ib=false)=>({text:v,options:{align:'center',fontFace:'Calibri',fontSize:10,fill:{color:ib?'E6FBF5':WHT},color:ib?TEA2:'344A60'}});
+    const tbl=[th,
+      [{text:'DNS/IPAM Labor Cost',options:{align:'left',fontFace:'Calibri',fontSize:10,color:'344A60'}},cc(f(D.labW)),cc(f(D.labI),true),cc(f(D.labC))],
+      [{text:'Incident Cost',       options:{align:'left',fontFace:'Calibri',fontSize:10,color:'344A60'}},cc(f(D.incW)),cc(f(D.incI),true),cc(f(D.incC))],
+      [{text:'License Cost',        options:{align:'left',fontFace:'Calibri',fontSize:10,color:'344A60'}},cc('—'),cc(f(D.ibLic),true),cc('—')],
+      [{text:'Total Annual Cost',   options:{bold:true,align:'left',fontFace:'Calibri',fontSize:10,fill:{color:NAV},color:WHT}},
+       {text:f(D.totW),options:{bold:true,align:'center',fontFace:'Calibri',fontSize:10,fill:{color:NAV},color:WHT}},
+       {text:f(D.totI),options:{bold:true,align:'center',fontFace:'Calibri',fontSize:10,fill:{color:TEA2},color:WHT}},
+       {text:f(D.totC),options:{bold:true,align:'center',fontFace:'Calibri',fontSize:10,fill:{color:NAV},color:WHT}}],
+      [{text:'Savings with Infoblox',options:{bold:true,align:'left',fontFace:'Calibri',fontSize:10,fill:{color:'F0FDF9'},color:'344A60'}},
+       cc('—'),{text:f(D.savVsNo)+' ('+D.savPct+'%)',options:{bold:true,align:'center',fontFace:'Calibri',fontSize:10,fill:{color:'DCFAF3'},color:TEA3}},
+       {text:f(totSavComp)+' ('+totSavCompPct+'%)',options:{align:'center',fontFace:'Calibri',fontSize:10,fill:{color:'F0FDF9'},color:'344A60'}}],
+      [{text:'Savings vs '+D.comp,   options:{bold:true,align:'left',fontFace:'Calibri',fontSize:10,fill:{color:'F0FDF9'},color:'344A60'}},
+       cc('—'),{text:D.savIvsC>0?f(D.savIvsC)+' ('+D.savIvsC_pct+'%)':'-'+f(Math.abs(D.savIvsC)),options:{bold:true,align:'center',fontFace:'Calibri',fontSize:10,fill:{color:'DCFAF3'},color:TEA3}},
+       cc('—')],
+    ];
+    s3.addTable(tbl,{x:.35,y:2.65,w:9.3,h:2.38,colW:[2.7,2.15,2.25,2.2],border:{pt:.4,color:MGR}});
+    s3.addText('* All values calculated from your inputs using the Infoblox Value Model.',{x:.35,y:5.1,w:9.3,h:.2,color:DGR,fontSize:8.5,fontFace:'Calibri',italic:true});
+
+    // ── SLIDE 4: MODEL ASSUMPTIONS (teal header, dark cards, bench table) ──
+    const s4=pptx.addSlide();
+    s4.background={color:WHT};
+    s4.addShape(pptx.shapes.RECTANGLE,{x:0,y:0,w:10,h:.7,fill:{color:TEA2}});
+    s4.addText('MODEL ASSUMPTIONS',{x:.35,y:0,w:9.3,h:.7,color:WHT,fontSize:18,fontFace:'Calibri',bold:true,valign:'middle'});
+
+    const cards=[
+      ['Managed IP Addresses',       `${Math.round(D.ips).toLocaleString()} IPs — directly drives labor and overhead calculations.`],
+      ['Incidents per Year',          `${Math.round(D.inc).toLocaleString()} incidents — estimated DNS/DHCP/IPAM-related events annually.`],
+      ['Avg. Cost per Incident',      `${f(D.icost)} — downtime, IT remediation, and opportunity cost combined.`],
+      ['IT Hourly Rate',              `$${D.rate}/hr — fully-loaded cost of IT staff managing network infrastructure.`],
+      ['Manual Admin Hours / Year',   `${D.manH.toFixed(2)} hrs per IP — time spent without automation or DDI platform.`],
+      ['Infoblox Admin Hours / Year', `${D.ibHrs.toFixed(2)} hrs per IP — reduced overhead with ${D.prod} deployed.`],
+    ];
+    cards.forEach(([t,b],i)=>{
+      const x=.35+(i%2)*4.85, y=.9+Math.floor(i/2)*1.25;
+      s4.addShape(pptx.shapes.RECTANGLE,{x,y,w:4.55,h:1.12,fill:{color:'0D2444'},line:{color:'1E3A5A',width:.5}});
+      s4.addShape(pptx.shapes.RECTANGLE,{x,y,w:.05,h:1.12,fill:{color:TEA}});
+      s4.addText(t,{x:x+.12,y:y+.1,w:4.3,h:.3,color:TEA,fontSize:11.5,fontFace:'Calibri',bold:true});
+      s4.addText(b,{x:x+.12,y:y+.44,w:4.3,h:.58,color:'A0BDD0',fontSize:10,fontFace:'Calibri'});
+    });
+
+    s4.addText('Competitor Efficiency Benchmarks',{x:.35,y:4.82,w:9.3,h:.28,color:TEA,fontSize:11.5,fontFace:'Calibri',bold:true});
+    const bth=[
+      {text:'Competitor',options:{fill:{color:NAV},color:WHT,bold:true,fontFace:'Calibri',fontSize:9.5,align:'center'}},
+      {text:'Efficiency vs Manual',options:{fill:{color:NAV},color:WHT,bold:true,fontFace:'Calibri',fontSize:9.5,align:'center'}},
+      {text:'Incident Factor',options:{fill:{color:NAV},color:WHT,bold:true,fontFace:'Calibri',fontSize:9.5,align:'center'}},
+      {text:'Source',options:{fill:{color:NAV},color:WHT,bold:true,fontFace:'Calibri',fontSize:9.5,align:'center'}},
+    ];
+    const bench=[
+      ['BlueCat','74%','0.72','PeerSpot & ControlD'],
+      ['EfficientIP','70%','0.75','PeerSpot benchmark'],
+      ['Cisco DDI','66%','0.80','Industry comparison data'],
+      ['SolarWinds','62%','0.85','SourceForge profile'],
+      ['Men&Mice','70%','0.78','Peer review averages'],
+      ['BT Diamond IP','64%','0.82','Market positioning'],
+    ];
+    const btbl=[bth,...bench.map(r=>r.map((c,ci)=>({
+      text:c+(r[0]===D.comp&&ci===0?' ✓':''),
+      options:{color:r[0]===D.comp?TEA2:'344A60',bold:r[0]===D.comp,fill:{color:r[0]===D.comp?'E6FBF5':WHT},fontFace:'Calibri',fontSize:9.5,align:ci===0?'left':'center'}
+    })))];
+    s4.addTable(btbl,{x:.35,y:5.12,w:9.3,h:.001,colW:[2.4,2.3,2.2,2.4],border:{pt:.4,color:MGR}});
+
+    const fn=`Infoblox-Value-Analysis-${D.org.replace(/\s+/g,'-')}.pptx`;
+    await pptx.writeFile({fileName:fn});
+    btn.disabled=false;
+    st.className='ok'; st.textContent=`✓ Downloaded: ${fn}`;
+  }catch(err){
+    btn.disabled=false;
+    st.className='er'; st.textContent='Error: '+err.message;
+    console.error(err);
+  }
+}
+
+/* ── INIT ── */
+window.addEventListener('load',()=>{
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    const pct=(el.value-el.min)/(el.max-el.min)*100;
+    el.style.background=`linear-gradient(90deg,#1ABC9C ${pct}%,#D0DCE8 ${pct}%)`;
+  });
+  document.querySelector('.prod-card[data-id="ddi"]').click();
+  document.querySelector('.cc[data-nm="BlueCat"]').click();
+});
+</script>
+
+<!-- PptxGenJS: unpkg primary, cdnjs fallback -->
+<script>
+(function(){
+  var s=document.createElement('script');
+  s.src='https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+  s.onerror=function(){
+    var s2=document.createElement('script');
+    s2.src='https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
+})();
+</script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</body>
+</html>
